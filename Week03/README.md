@@ -46,6 +46,8 @@ Project notes: `ServerManager ▸ Start On Headless` off, `ServerBootstrap` + `C
 
 Result: both paddles moved on every screen, serve / rally / goals worked, score and feed identical everywhere (played up to LEFT 3 : 4 RIGHT); server HUD: 3 clients on UDP 7770, server traffic in 284 B/s, out 1,506 B/s at tick 30. Screenshots: [server](screenshots/server_efe_spectator.png), [Yusuf, LEFT](screenshots/client_yusuf_left_1.jpg), [Yusuf, rally](screenshots/client_yusuf_left_2.jpg).
 
+**Swapped roles (Yusuf or Bora as server): tried, did not work** — the Pong build crashed on their laptops when they started the server, so only Efe's laptop could host. Not solved yet; next step is to read their `Player.log` (`%USERPROFILE%\AppData\LocalLow\DefaultCompany\Pong\Player.log`) to see why.
+
 > We live in different cities, so instead of one phone hotspot we joined one **Tailscale** network (free virtual LAN; every PC gets a 100.x.y.z address) and ran the Pong build on each laptop. Firewall: Unity/Pong allowed on Private + Public networks.
 
 ---
