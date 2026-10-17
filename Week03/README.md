@@ -38,11 +38,12 @@ Project notes: `ServerManager ▸ Start On Headless` off, `ServerBootstrap` + `C
 
 | Direction | Partner | Network | Server IP | My ClientId + side | RTT | Worked first try? |
 |---|---|---|---|---|---|---|
-| Rehearsal, one laptop (server + 2 clients, 3 processes) | — | loopback | 127.0.0.1 | client 0, LEFT (client 1 = RIGHT) | 7–33 ms at tick 30 | yes |
-| I am server, partner is guest | *(partner meeting)* | phone hotspot | | | | |
-| Partner is server, I am guest | *(partner meeting)* | phone hotspot | | | | |
+| Editor: server + client in one process | — | loopback | 127.0.0.1 | client 0, LEFT; restarted → client 1, LEFT, score 1 : 0 kept | 33 ms | yes |
+| Builds: 1 server + 2 client processes, one laptop | — | loopback | 127.0.0.1 | client 0 LEFT, client 1 RIGHT | 7–33 ms (tick 30), 40–100 ms (tick 10), ≈17 ms (tick 60) | yes |
+| I am server, partner is guest | not done | — | — | — | — | — |
+| Partner is server, I am guest | not done | — | — | — | — | — |
 
-> The two partner rows are filled in at the meeting: hotspot, `ipconfig` on the server laptop, guest types the IP in the HUD, allow Unity through the firewall (Private + Public).
+> **Two-machine test not done.** Our team members live in different cities, so a shared hotspot was not possible. Every value above was measured on one laptop. For a remote test we prepared a ready Windows build and a guide (Tailscale virtual network, Private + Public firewall rules). We will do it when we can, and at the latest at the demo.
 
 ---
 
