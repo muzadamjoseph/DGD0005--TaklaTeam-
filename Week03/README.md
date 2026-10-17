@@ -1,6 +1,6 @@
 # Week 3 — Homework 1: Pong connects and replicates
 
-TaklaTeam · Unity 6000.3.2f1 · FishNet 4.7.x (free) · Tugboat UDP 7770 · tick rate 30
+**TaklaTeam:** Efe Can Eser · Bora Deniz Nural · Yusuf Arda Göçer — Unity 6000.3.2f1 · FishNet 4.7.x (free) · Tugboat UDP 7770 · tick rate 30
 
 Scripts I wrote (all in `Pong/Assets/Scripts/Network/`):
 
