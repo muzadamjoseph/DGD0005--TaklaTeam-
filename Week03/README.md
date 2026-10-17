@@ -40,10 +40,13 @@ Project notes: `ServerManager ▸ Start On Headless` off, `ServerBootstrap` + `C
 |---|---|---|---|---|---|---|
 | Editor: server + client in one process | — | loopback | 127.0.0.1 | client 0, LEFT; restarted → client 1, LEFT, score 1 : 0 kept | 33 ms | yes |
 | Builds: 1 server + 2 client processes, one laptop | — | loopback | 127.0.0.1 | client 0 LEFT, client 1 RIGHT | 7–33 ms (tick 30), 40–100 ms (tick 10), ≈17 ms (tick 60) | yes |
-| I am server, partner is guest | not done | — | — | — | — | — |
-| Partner is server, I am guest | not done | — | — | — | — | — |
+| **Three laptops — Efe is server** (+ his own spectator client) | Yusuf Arda Göçer, Bora Deniz Nural | Tailscale virtual network over the Internet | 100.89.114.56 (Efe's Tailscale IP), UDP 7770 | Efe: client 3, SPECTATOR (local client on 127.0.0.1) | 33 ms | yes |
+| ↳ guest Yusuf | Efe (server) | Tailscale | 100.89.114.56 | client 1, LEFT (blue) | 33 ms | yes |
+| ↳ guest Bora | Efe (server) | Tailscale | 100.89.114.56 | RIGHT (orange) | — | yes |
 
-> **Two-machine test not done.** Our team members live in different cities, so a shared hotspot was not possible. Every value above was measured on one laptop. For a remote test we prepared a ready Windows build and a guide (Tailscale virtual network, Private + Public firewall rules). We will do it when we can, and at the latest at the demo.
+Result: both paddles moved on every screen, serve / rally / goals worked, score and feed identical everywhere (played up to LEFT 3 : 4 RIGHT); server HUD: 3 clients on UDP 7770, server traffic in 284 B/s, out 1,506 B/s at tick 30. Screenshots: [server](screenshots/server_efe_spectator.png), [Yusuf, LEFT](screenshots/client_yusuf_left_1.jpg), [Yusuf, rally](screenshots/client_yusuf_left_2.jpg).
+
+> We live in different cities, so instead of one phone hotspot we joined one **Tailscale** network (free virtual LAN; every PC gets a 100.x.y.z address) and ran the Pong build on each laptop. Firewall: Unity/Pong allowed on Private + Public networks.
 
 ---
 
@@ -104,7 +107,7 @@ Final setting: **tick rate 30**.
 | **Cost** | the studio pays per server, every month | free; the host's upload pays | free |
 | **Latency** | everyone has some ping to a neutral point | host 0 ms, guests ping the host | direct, when NAT allows |
 
-Pong today is a **dedicated server**. In Step 5 the server was **Multiplayer Play Mode Player 2, tagged `Server`** (started by `ServerBootstrap`); in Step 11 it was **the Unity editor on the server laptop** (Start Server), and the partner's laptop was a client.
+Pong today is a **dedicated server**. In Step 5 the server was **Multiplayer Play Mode Player 2, tagged `Server`** (started by `ServerBootstrap`); in Step 11 it was **the Pong build on Efe's laptop** (Start Server, reached at 100.89.114.56 over Tailscale), and Yusuf's and Bora's laptops were the clients.
 
 **3. Why UDP?** TCP guarantees order, so one lost packet blocks everything behind it until it is resent — a ball position from 100 ms ago is worthless and not worth waiting for. Games use UDP and rebuild reliability only for the messages that need it. In Pong **reliable**: a goal / the score (`AnnounceGoal`, the score SyncVars, `RequestServe`); **unreliable**: the ball's position every tick (NetworkTransform).
 
