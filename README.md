@@ -1,7 +1,7 @@
 # DGD0005--TaklaTeam-
 DGD0005-Week 3-Homework 1 made by Bora Deniz Nural, Efe Can Eser and Yusuf Arda Göçer
 
-## Pong (FishNet, dedicated server) — branch `dgd0005-EfeCanEser`
+## Pong (FishNet, dedicated server) — branch `dgd0005-YusufArdaGocer`
 
 Team: **Efe Can Eser**, **Bora Deniz Nural**, **Yusuf Arda Göçer**.
 
