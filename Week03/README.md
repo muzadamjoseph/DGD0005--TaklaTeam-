@@ -42,11 +42,12 @@ Project notes: `ServerManager ▸ Start On Headless` off, `ServerBootstrap` + `C
 | Builds: 1 server + 2 client processes, one laptop | — | loopback | 127.0.0.1 | client 0 LEFT, client 1 RIGHT | 7–33 ms (tick 30), 40–100 ms (tick 10), ≈17 ms (tick 60) | yes |
 | **Three laptops — Efe is server** (+ his own spectator client) | Yusuf Arda Göçer, Bora Deniz Nural | Tailscale virtual network over the Internet | 100.89.114.56 (Efe's Tailscale IP), UDP 7770 | Efe: client 3, SPECTATOR (local client on 127.0.0.1) | 33 ms | yes |
 | ↳ guest Yusuf | Efe (server) | Tailscale | 100.89.114.56 | client 1, LEFT (blue) | 33 ms | yes |
-| ↳ guest Bora | Efe (server) | Tailscale | 100.89.114.56 | RIGHT (orange) | — | yes |
+| ↳ guest Bora | Efe (server) | Tailscale | 100.89.114.56 | client 1, RIGHT (orange) — another server run | 27 ms | yes |
+| **Swap: Yusuf or Bora is server**, Efe is guest | Yusuf, Bora | Tailscale | their 100.x address | — | — | **no** — Pong closed (crashed) on their laptop when it ran as server; only Efe's laptop could host |
 
-Result: both paddles moved on every screen, serve / rally / goals worked, score and feed identical everywhere (played up to LEFT 3 : 4 RIGHT); server HUD: 3 clients on UDP 7770, server traffic in 284 B/s, out 1,506 B/s at tick 30. Screenshots: [server](screenshots/server_efe_spectator.png), [Yusuf, LEFT](screenshots/client_yusuf_left_1.jpg), [Yusuf, rally](screenshots/client_yusuf_left_2.jpg).
+Result: both paddles moved on every screen, serve / rally / goals worked, score, feed and "RIGHT scored! 1 : 2" flash identical everywhere (played up to LEFT 3 : 4 RIGHT); server HUD: 3 clients on UDP 7770, server traffic in 284 B/s, out 1,506 B/s at tick 30. Screenshots: [server](screenshots/server_efe_spectator.png), [Yusuf, LEFT](screenshots/client_yusuf_left_1.jpg), [Yusuf, rally](screenshots/client_yusuf_left_2.jpg), [Bora, RIGHT](screenshots/client_bora_right.jpg).
 
-**Swapped roles (Yusuf or Bora as server): tried, did not work** — the Pong build crashed on their laptops when they started the server, so only Efe's laptop could host. Not solved yet; next step is to read their `Player.log` (`%USERPROFILE%\AppData\LocalLow\DefaultCompany\Pong\Player.log`) to see why.
+Swap: the same build runs as a client on Yusuf's and Bora's laptops but closes when they start it as the server, so for the match Efe's laptop is the server. The cause is still open; the next thing to read is the Unity log of the crashed run, `%USERPROFILE%\AppData\LocalLow\DefaultCompany\Pong\Player-prev.log`.
 
 > We live in different cities, so instead of one phone hotspot we joined one **Tailscale** network (free virtual LAN; every PC gets a 100.x.y.z address) and ran the Pong build on each laptop. Firewall: Unity/Pong allowed on Private + Public networks.
 
