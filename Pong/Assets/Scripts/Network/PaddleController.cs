@@ -27,6 +27,12 @@ public class PaddleController : NetworkBehaviour
 
     private float _serverAxis;              // server-only memory: the last input the server accepted
 
+    // Rate limit, server-only. One paddle belongs to one client, so one timestamp per paddle
+    // is one timestamp per client (an instance field, never static).
+    private const double MinInputGap = 0.030;   // seconds
+    private double _lastInputTime = -1;
+    public int RejectedInputs;
+
     public static string SideName(int side) => side == Left ? "LEFT" : side == Right ? "RIGHT" : "SPECTATOR";
 
     private void Awake()
@@ -56,6 +62,9 @@ public class PaddleController : NetworkBehaviour
 
         Debug.Log($"[Server] client {Owner.ClientId} gets side {SideName(Side.Value)}");
         GameState.Announce($"Client {Owner.ClientId} joined as {SideName(Side.Value)}");
+
+        // server window: how many inputs this client sent too fast (null = paddle gone, draw nothing)
+        ConnectionHud.Panels.Add(() => this == null ? null : $"Rejected inputs (paddle {OwnerId}): {RejectedInputs}");
     }
 
     public override void OnStopServer()
@@ -155,6 +164,16 @@ public class PaddleController : NetworkBehaviour
         if (float.IsNaN(axis)) return;
         axis = Mathf.Clamp(axis, -1f, 1f);     // a client that sends 50 gets 1
         if (Side.Value == Spectator) return;   // a spectator has no paddle to move
+
+        // too fast? one keyboard sends one input per tick (33 ms); anything inside 30 ms is a program
+        double now = TimeManager.TicksToTime(TimeManager.Tick);
+        if (_lastInputTime >= 0 && now - _lastInputTime < MinInputGap)
+        {
+            RejectedInputs++;
+            Debug.Log($"[Server] Rejected input from client {OwnerId}: too fast.");
+            return;
+        }
+        _lastInputTime = now;
 
         _serverAxis = axis;
     }
