@@ -1,7 +1,9 @@
-// Pong — Step 4 (+ Step 8 RPCs). The networked paddle, spawned once per client by PlayerSpawner.
-// The OWNER reads the keyboard and moves it; NetworkTransform (client authoritative) copies the
-// position to the server and from there to everybody else (Notes 4.3–4.7).
-// The SERVER chooses the side and writes it into a SyncVar; every client reads it from there.
+// Pong — Step 4 (+ Step 8 RPCs), made server-authoritative in Homework 2.
+// The networked paddle, spawned once per client by PlayerSpawner.
+// The OWNER only reads the keyboard and sends its input (up / down / nothing) every tick.
+// The SERVER moves the paddle; NetworkTransform (client authoritative OFF) sends the server's
+// position to everybody, the owner included.
+// The SERVER also chooses the side and writes it into a SyncVar; every client reads it from there.
 using System.Collections.Generic;
 using FishNet.Connection;
 using FishNet.Object;
@@ -22,6 +24,8 @@ public class PaddleController : NetworkBehaviour
     public readonly SyncVar<int> Side = new SyncVar<int>(Spectator);
 
     [SerializeField] private float speed = 8f;
+
+    private float _serverAxis;              // server-only memory: the last input the server accepted
 
     public static string SideName(int side) => side == Left ? "LEFT" : side == Right ? "RIGHT" : "SPECTATOR";
 
@@ -107,15 +111,47 @@ public class PaddleController : NetworkBehaviour
         if (kb == null) return;
 
         if (kb.spaceKey.wasPressedThisFrame) RequestServe();
+    }
 
-        if (Side.Value == Spectator) return;
+    // ---------- Homework 2: input up, position down ----------
 
-        float dir = 0f;                     // one keyboard per machine: W/S or the arrows, both work
-        if (kb.wKey.isPressed || kb.upArrowKey.isPressed)   dir += 1f;
-        if (kb.sKey.isPressed || kb.downArrowKey.isPressed) dir -= 1f;
+    public override void OnStartNetwork()
+    {
+        base.OnStartNetwork();
+        TimeManager.OnTick += OnTick;
+    }
 
-        transform.position += Vector3.forward * dir * speed * Time.deltaTime;
-        Court.ClampPaddle(transform);
+    public override void OnStopNetwork()
+    {
+        base.OnStopNetwork();
+        if (TimeManager != null) TimeManager.OnTick -= OnTick;
+    }
+
+    private void OnTick()
+    {
+        // 1. Owner sends: only the input, every tick, also when it is 0.
+        if (IsOwner && Side.Value != Spectator)
+        {
+            Keyboard kb = Keyboard.current;
+            float axis = 0f;                // one keyboard per machine: W/S or the arrows, both work
+            if (kb != null && (kb.wKey.isPressed || kb.upArrowKey.isPressed))   axis += 1f;
+            if (kb != null && (kb.sKey.isPressed || kb.downArrowKey.isPressed)) axis -= 1f;
+            ServerSetAxis(axis);
+        }
+
+        // 2. Server moves: the only place that writes the paddle's position.
+        if (IsServerInitialized)
+        {
+            transform.position += Vector3.forward * _serverAxis * speed * (float)TimeManager.TickDelta;
+            Court.ClampPaddle(transform);
+        }
+    }
+
+    /// Client -> server: "this is my input now". The server decides what it does with it.
+    [ServerRpc]
+    private void ServerSetAxis(float axis)
+    {
+        _serverAxis = axis;
     }
 
     // ---------- Step 8: three RPCs ----------
