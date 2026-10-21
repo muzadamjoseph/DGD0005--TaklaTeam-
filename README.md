@@ -1,7 +1,7 @@
 # DGD0005--TaklaTeam-
 DGD0005 Multiplayer Programming — **Team Takla:** Yusuf Arda Göçer, Bora Deniz Nural, Efe Can Eser
 
-## Pong (FishNet, dedicated server) — branch `dgd0005-EfeCanEser`
+## Pong (FishNet, dedicated server) — branch `dgd0005-EfeCanEser, dgd0005-BoraDenizNural, dgd0005YusufArdaGocer`
 
 Two-player networked Pong: one server, two players (LEFT / RIGHT), extra clients are spectators. Unity **6000.3.2f1**, FishNet 4.7.x (free), transport Tugboat (UDP **7770**).
 Project: [`Pong/`](Pong) · scene `Pong/Assets/Scenes/Pong.unity` · our scripts: `Pong/Assets/Scripts/Network/` · weekly answers: [`Week03/README.md`](Week03/README.md) (Homework 1), [`Week04/README.md`](Week04/README.md) (Homework 2).
