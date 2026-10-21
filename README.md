@@ -1,5 +1,5 @@
 # DGD0005--TaklaTeam-
-DGD0005 Multiplayer Programming — **Team Takla:** Yusuf Arda Göçer, Bora Deniz Nural, Efe Can Eser
+DGD0005 Multiplayer Programming — **Team Takla:** Yusuf Arda Göçer, Efe Can Eser, Bora Deniz Nural
 
 ## Pong (FishNet, dedicated server) — branch `dgd0005-EfeCanEser, dgd0005-BoraDenizNural, dgd0005YusufArdaGocer`
 
