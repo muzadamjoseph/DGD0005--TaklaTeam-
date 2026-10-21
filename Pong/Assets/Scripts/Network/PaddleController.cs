@@ -5,6 +5,7 @@
 // position to everybody, the owner included.
 // The SERVER also chooses the side and writes it into a SyncVar; every client reads it from there.
 using System.Collections.Generic;
+using FishNet.Component.Transforming;
 using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
@@ -26,17 +27,21 @@ public class PaddleController : NetworkBehaviour
     [SerializeField] private float speed = 8f;
 
     private float _serverAxis;              // server-only memory: the last input the server accepted
+    private NetworkTransform _networkTransform;
 
     // Rate limit, server-only. One paddle belongs to one client, so one timestamp per paddle
     // is one timestamp per client (an instance field, never static).
     private const double MinInputGap = 0.030;   // seconds
     private double _lastInputTime = -1;
     public int RejectedInputs;
+    private const double MinServeGap = 1.0;     // seconds, serve requests (extra)
+    private double _lastServeTime = -1;
 
     public static string SideName(int side) => side == Left ? "LEFT" : side == Right ? "RIGHT" : "SPECTATOR";
 
     private void Awake()
     {
+        _networkTransform = GetComponent<NetworkTransform>();
         Side.OnChange += OnSideChanged;
     }
 
@@ -119,7 +124,14 @@ public class PaddleController : NetworkBehaviour
         Keyboard kb = Keyboard.current;
         if (kb == null) return;
 
-        if (kb.spaceKey.wasPressedThisFrame) RequestServe();
+        if (kb.spaceKey.wasPressedThisFrame) ServerRequestServe();
+
+        // ---- Step 5: the cheating client. These stay in the project; the server must survive them. ----
+        if (kb.cKey.wasPressedThisFrame)                        // C: spam, 20 inputs in one frame
+            for (int i = 0; i < 20; i++) ServerSetAxis(1f);
+        if (kb.xKey.wasPressedThisFrame) ServerSetAxis(50f);    // X: speed hack, an impossible input
+        if (kb.tKey.wasPressedThisFrame && NetworkBall.Instance != null)
+            transform.position = NetworkBall.Instance.transform.position;   // T: teleport, on this client only, no RPC
     }
 
     // ---------- Homework 2: input up, position down ----------
@@ -153,6 +165,10 @@ public class PaddleController : NetworkBehaviour
         {
             transform.position += Vector3.forward * _serverAxis * speed * (float)TimeManager.TickDelta;
             Court.ClampPaddle(transform);
+            // NetworkTransform only sends changes. Resend the server's position every tick, so a client
+            // that wrote its own position (cheat key T) is corrected within one tick, even when the
+            // paddle stands still. Costs at most what a moving paddle costs anyway.
+            _networkTransform.ForceSend();
         }
     }
 
@@ -182,8 +198,18 @@ public class PaddleController : NetworkBehaviour
 
     /// Client -> server: "let me serve". The server decides whether that is allowed.
     [ServerRpc]
-    private void RequestServe()
+    private void ServerRequestServe()
     {
+        // too fast? (extra, not graded) one serve request per second per client
+        double now = TimeManager.TicksToTime(TimeManager.Tick);
+        if (_lastServeTime >= 0 && now - _lastServeTime < MinServeGap)
+        {
+            TargetTooFast(Owner);
+            return;
+        }
+        _lastServeTime = now;
+
+        // allowed by the game rule?
         GameState gs = GameState.Instance;
         NetworkBall ball = NetworkBall.Instance;
         if (gs == null || ball == null) return;
@@ -198,6 +224,13 @@ public class PaddleController : NetworkBehaviour
     public void AnnounceGoal(int left, int right)
     {
         ConnectionHud.Flash($"{SideName(Side.Value)} scored! {left} : {right}");
+    }
+
+    /// Server -> one client: your serve request came less than a second after the last one.
+    [TargetRpc]
+    private void TargetTooFast(NetworkConnection target)
+    {
+        ConnectionHud.Flash("TOO FAST");
     }
 
     /// Server -> one client (the conceder): it is your serve now.
