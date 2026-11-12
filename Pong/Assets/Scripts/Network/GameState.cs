@@ -62,16 +62,43 @@ public class GameState : NetworkBehaviour
         else RightScore.Value++;
         ServingSide.Value = 1 - scorerSide;
         Announce($"{PaddleController.SideName(scorerSide)} scored. {LeftScore.Value} : {RightScore.Value}");
+        HandOverServe();   // nobody on the conceding side (the host is alone) -> the scorer serves again
 
         // 2. ... then the events (RPCs)
-        PaddleController scorer = null, conceder = null;
+        PaddleController scorer = null, nextServer = null;
         foreach (PaddleController p in PaddleController.All)
         {
             if (p.Side.Value == scorerSide) scorer = p;
-            else if (p.Side.Value == 1 - scorerSide) conceder = p;
+            if (p.Side.Value == ServingSide.Value) nextServer = p;
         }
         if (scorer != null) scorer.AnnounceGoal(LeftScore.Value, RightScore.Value);
-        if (conceder != null) conceder.YouServe(conceder.Owner);
+        if (nextServer != null) nextServer.YouServe(nextServer.Owner);
+    }
+
+    /// Server only. Week 5, Step 6: a player (LEFT or RIGHT) left while the server keeps running,
+    /// e.g. the guest clicked Stop Client. The ball goes back to the centre and the serve goes to a
+    /// side somebody still plays, so the host can go on alone.
+    public void ServerPlayersChanged()
+    {
+        if (!IsServerInitialized || !ServerManager.Started) return;   // the whole server is stopping: nothing to fix
+        if (NetworkBall.Instance != null) NetworkBall.Instance.ServerReset();
+        HandOverServe();
+    }
+
+    /// Server only. ServingSide must never point at an empty side, or nobody can serve.
+    private void HandOverServe()
+    {
+        int side = ServingSide.Value;
+        if (SideTaken(side) || !SideTaken(1 - side)) return;
+        ServingSide.Value = 1 - side;
+        Announce($"Nobody on {PaddleController.SideName(side)}, {PaddleController.SideName(1 - side)} serves");
+    }
+
+    private static bool SideTaken(int side)
+    {
+        foreach (PaddleController p in PaddleController.All)
+            if (p != null && p.Side.Value == side) return true;
+        return false;
     }
 
     /// Server only. Adds a line to the feed; keeps the last six.

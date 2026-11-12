@@ -50,10 +50,22 @@ public class PaddleController : NetworkBehaviour
         Side.OnChange -= OnSideChanged;
     }
 
+    // Week 5, Step 3: on a host OnStartServer AND OnStartClient run for the same paddle and both add it.
+    // The guards below keep it one entry; this panel shows the count (host with one paddle: 1, not 2).
+    private static bool _countPanelAdded;
+
+    private static void AddCountPanel()
+    {
+        if (_countPanelAdded) return;
+        _countPanelAdded = true;
+        ConnectionHud.Panels.Add(() => $"Paddles in All: {All.Count}");
+    }
+
     public override void OnStartServer()
     {
         base.OnStartServer();
         if (!All.Contains(this)) All.Add(this);
+        AddCountPanel();
 
         // first free side; both taken -> spectator
         bool leftTaken = false, rightTaken = false;
@@ -65,7 +77,7 @@ public class PaddleController : NetworkBehaviour
         }
         Side.Value = !leftTaken ? Left : !rightTaken ? Right : Spectator;
 
-        Debug.Log($"[Server] client {Owner.ClientId} gets side {SideName(Side.Value)}");
+        Debug.Log($"[Server] Spawned paddle #{ObjectId} for client {Owner.ClientId}: {SideName(Side.Value)}. All.Count = {All.Count}");
         GameState.Announce($"Client {Owner.ClientId} joined as {SideName(Side.Value)}");
 
         // server window: how many inputs this client sent too fast (null = paddle gone, draw nothing)
@@ -77,17 +89,19 @@ public class PaddleController : NetworkBehaviour
         base.OnStopServer();
         All.Remove(this);
         GameState.Announce($"Client {Owner.ClientId} ({SideName(Side.Value)}) left");
+        if (Side.Value != Spectator && GameState.Instance != null) GameState.Instance.ServerPlayersChanged();
     }
 
     public override void OnStartClient()
     {
         base.OnStartClient();
         if (!All.Contains(this)) All.Add(this);
+        AddCountPanel();
 
         if (IsOwner)
         {
             Local = this;
-            Debug.Log($"[Client] I am client {Owner.ClientId}, side {SideName(Side.Value)}");
+            Debug.Log($"[Client] I am client {Owner.ClientId}, playing {SideName(Side.Value)}. My paddle is #{ObjectId}. All.Count = {All.Count}");
         }
         Place();
     }
