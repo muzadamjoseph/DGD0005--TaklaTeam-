@@ -49,7 +49,7 @@ Result: both paddles moved on every screen, serve / rally / goals worked, score,
 
 Swap: the same build runs as a client on Yusuf's and Bora's laptops but closes when they start it as the server, so for the match Efe's laptop is the server. The cause is still open; the next thing to read is the Unity log of the crashed run, `%USERPROFILE%\AppData\LocalLow\DefaultCompany\Pong\Player-prev.log`.
 
-> We live in different cities, so instead of one phone hotspot we joined one **Tailscale** network (free virtual LAN; every PC gets a 100.x.y.z address) and ran the Pong build on each laptop. Firewall: Unity/Pong allowed on Private + Public networks.
+> We live in different districts, so instead of one phone hotspot we joined one **Tailscale** network (free virtual LAN; every PC gets a 100.x.y.z address) and ran the Pong build on each laptop. Firewall: Unity/Pong allowed on Private + Public networks.
 
 ---
 
