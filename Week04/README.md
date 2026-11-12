@@ -112,6 +112,30 @@ The ball is moved and checked for hits only on the server, against the **server'
 
 ---
 
+## Homework 2 on a host (Week 5, at home)
+
+Same code, but no server instance: **Start Host** in the editor (server + client 0, LEFT) and one guest, a development build on the same PC (client 1, RIGHT), tick rate 30. Every step was checked from the guest window, with the same kind of throw-away key script as above.
+
+**Which paddle gets late with Client Authoritative off? The guest's, not the host's.** Key down → own paddle starts moving on the own screen:
+
+| | Host's paddle, on the host | Guest's paddle, on the guest |
+|---|---|---|
+| tick rate 30 | 36–67 ms, mean 52 (53 presses) | 93–186 ms, median 115 (22 presses) |
+| tick rate 10 | 102–200 ms (25 presses) | 141–233 ms (11 presses) |
+
+The host's input reaches its own server one tick later, and the host draws the server's transform directly: the paddle it sees *is* the server's paddle, with no interpolation buffer. The guest's input has to get to the host, the position has to come back, and then it is drawn a couple of ticks behind. That is on one PC with 0–33 ms RTT; over a LAN or Relay the guest also pays its real RTT and the host still pays nothing. So the change from Step 1 cost the guests something and the host nothing.
+
+The steps, from the guest window:
+
+- **Steps 1–2:** the guest held W for 0.25 s and its paddle went from z = 0 to z = 1.87 on its screen and on the server, at the normal speed. The guest never moves its own `transform`.
+- **Step 3, X (axis 50):** the paddle moved 0.27 (z 2.13 → 2.40), exactly one tick at 8 units/s. The clamp runs on the host's server half and logs nothing: 50 is not too fast, only too big.
+- **Step 4, C (spam):** the paddle moved one tick (z 1.87 → 2.13). The host's `Rejected inputs (paddle 1)` went from 34 to 68 in the ten seconds around the press. That cannot all be the spam: on the editor host the guest's honest inputs were also rejected, 10 in its first seconds after joining and then between 4 and 24 in other ten-second windows. Our dedicated build server in Step 4 above had 6 in 30 s. The reason is the one written in Step 4 (two inputs landing in the same server tick), the editor host just has a less even frame time. The host's own paddle got 7 rejections in about a minute: in FishNet 4.7.4 even the host's own `ServerSetAxis` goes through Tugboat on 127.0.0.1, so it meets the same limit.
+- **Step 5, T (teleport):** on the guest the paddle stood at the ball, (0, 0), for one frame and was back at (7, 2.40) in the next frame, 2 ms later. The host's server copy stayed at (7, 2.40) and its console showed nothing.
+
+None of it needed a code change. The paddle code was already written "as if never the host": the server part is behind `IsServerInitialized`, the input is a `[ServerRpc]`, and the guard `if (!IsOwner) return;` keeps the host's keyboard off the guest's paddle.
+
+---
+
 ## Vocabulary for this week
 
 | Word | Meaning |
