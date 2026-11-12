@@ -173,8 +173,20 @@ private void HandOverServe()   // also called in Goal()
 |---|---|---|---|---|---|
 | Editor = host, development build = guest, one PC | — | 127.0.0.1 | guest 1 (host 0) | guest 0–33 ms, mostly 7 · host 33 ms (one tick) | yes |
 | Same PC, the guest typed the Wi-Fi IPv4 from `ipconfig` | — | 192.168.1.3 (UDP 7770) | 1 | 0–20 ms, mostly 7 | yes |
-| Partner hosts, I join | *to fill in after the partner test* | | | | |
-| I host, partner joins | *to fill in after the partner test* | | | | |
+| I host, Bora joins | Bora Deniz Nural | 100.89.114.56 (my Tailscale IP), UDP 7770 | me 0, Bora 1 (RIGHT) | me 33 ms (one tick) · Bora 50–60 ms | yes |
+| I host, Yusuf joins | Yusuf Arda Göçer | 100.89.114.56 (my Tailscale IP), UDP 7770 | me 0, Yusuf 1 (RIGHT) | me 33 ms (one tick) · guest HUD 67 ms | yes |
+| Partner hosts, I join | — | — | — | — | not done: Pong closes on Bora's and Yusuf's laptops when they start it as a server (same as Week 3), so only my laptop can host |
+
+We live in different cities, so like in Week 3 we used one Tailscale network instead of a LAN (every PC gets a 100.x address). I hosted with the Pong build, each partner typed `100.89.114.56` and clicked Start Client. The guest's paddle moved on both screens, serve and goals worked and the score was the same on both (0 : 0, then 1 : 1). The host's HUD showed `Server: 2 client(s)`, `Paddles in All: 2`, and `Rejected inputs (paddle 1)` went from 13 to 36 during the rallies: over the Internet the guest's honest inputs land in the same server tick more often than on one PC. When the guest left, the host showed `Nobody on RIGHT, LEFT serves`, `Paddles in All: 1` and kept serving and scoring alone (5 : 1); after Stop Host the HUD was back to Start Server / Start Host with `Paddles in All: 0`. So the Step 6 fix also works over the network.
+
+| Guest over Tailscale (client 1, RTT 67 ms) | Host, same moment (client 0, RTT 33 ms) |
+|---|---|
+| ![Guest 1 : 1](screenshots/tailscale_guest_1-1.jpg) | ![Host 1 : 1](screenshots/tailscale_host_1-1.webp) |
+| ![Guest 0 : 0](screenshots/tailscale_guest_0-0.jpg) | ![Host 0 : 0](screenshots/tailscale_host_0-0.webp) |
+
+| Host after the guest left | Host after Stop Host |
+|---|---|
+| ![Host alone](screenshots/tailscale_host_guest_left.webp) | ![After Stop Host](screenshots/tailscale_host_after_stop.webp) |
 
 Before the partner test I looked at the firewall on my PC, because the fix list's second line is the usual reason a LAN guest cannot connect: Windows had an inbound rule for Unity.exe that allows it only on Domain networks and blocks it on Public, and my home Wi-Fi is set to Public. So a guest on another PC would not reach a host running in my editor until Unity is allowed on Private + Public. The Pong build already has Allow rules for Private + Public, so for the partner test the host runs the build (`Start Host` is in the build's HUD too).
 
