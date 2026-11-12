@@ -4,6 +4,7 @@
 //
 //   NetworkManager.ServerManager.StartConnection()              -> become a server
 //   NetworkManager.ClientManager.StartConnection(address, port) -> connect as a client
+//   both of them, in this one process, client on 127.0.0.1      -> a host (Week 5: Start Host)
 //
 // This file knows nothing about paddles, balls or scores. Your own scripts talk to it through
 // two static hooks, so the HUD never dictates how you name or structure your gameplay code:
@@ -116,14 +117,35 @@ public class ConnectionHud : MonoBehaviour
         return _bytesField == null ? 0 : (ulong)_bytesField.GetValue(side);
     }
 
+    // Week 5: a host is the two calls in ONE process. Its client connects to its own server.
+    private void StartHost()
+    {
+        _nm.ServerManager.StartConnection();                    // 1. become the server
+        _nm.ClientManager.StartConnection("127.0.0.1", port);   // 2. connect a client to it, same process
+    }
+
+    // Client first, then the server.
+    private void StopHost()
+    {
+        _nm.ClientManager.StopConnection();
+        _nm.ServerManager.StopConnection(true);
+    }
+
     private void OnGUI()
     {
         if (_nm == null) return;
 
-        GUILayout.BeginArea(new Rect(10, 10, 300, 420), GUI.skin.box);
-        GUILayout.Label("<b>PONG — Week 3: Connect and Replicate</b>", Rich());
+        // read once per OnGUI call, so a click that changes the state cannot change the layout halfway
+        bool bothStopped = _serverState == LocalConnectionState.Stopped && _clientState == LocalConnectionState.Stopped;
+        bool bothStarted = _serverState == LocalConnectionState.Started && _clientState == LocalConnectionState.Started;
 
-        // --- server ---
+        // the box grows with its content: on a host the server lines and the client lines are all here at once
+        GUILayout.BeginArea(new Rect(10, 10, 300, Screen.height - 20));
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label("<b>PONG — Week 5: Pong on a Host</b>", Rich());
+
+        // --- server, and the host buttons next to it ---
+        GUILayout.BeginHorizontal();
         if (_serverState == LocalConnectionState.Stopped)
         {
             if (GUILayout.Button("Start Server")) _nm.ServerManager.StartConnection();
@@ -132,6 +154,9 @@ public class ConnectionHud : MonoBehaviour
         {
             _nm.ServerManager.StopConnection(true);
         }
+        if (bothStopped && GUILayout.Button("Start Host")) StartHost();
+        if (bothStarted && GUILayout.Button("Stop Host")) StopHost();
+        GUILayout.EndHorizontal();
 
         // --- client ---
         GUILayout.BeginHorizontal();
@@ -180,6 +205,7 @@ public class ConnectionHud : MonoBehaviour
             GUILayout.Space(6);
             GUILayout.Label($"<b><color=#ffcc55>{_flash}</color></b>", Rich());
         }
+        GUILayout.EndVertical();
         GUILayout.EndArea();
     }
 
