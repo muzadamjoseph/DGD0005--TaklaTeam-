@@ -89,6 +89,7 @@ public class PaddleController : NetworkBehaviour
         base.OnStopServer();
         All.Remove(this);
         GameState.Announce($"Client {Owner.ClientId} ({SideName(Side.Value)}) left");
+        if (Side.Value != Spectator && GameState.Instance != null) GameState.Instance.ServerPlayersChanged();
     }
 
     public override void OnStartClient()

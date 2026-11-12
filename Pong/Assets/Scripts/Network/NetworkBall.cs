@@ -78,6 +78,13 @@ public class NetworkBall : NetworkBehaviour
         else if (p.x > Court.HalfWidth + 0.5f) ScoreFor(PaddleController.Left);
     }
 
+    /// Server only: stop the ball in the centre (a player left in the middle of a rally).
+    public void ServerReset()
+    {
+        if (!IsServerInitialized) return;
+        ResetToCentre();
+    }
+
     private void ScoreFor(int scorerSide)
     {
         ResetToCentre();
