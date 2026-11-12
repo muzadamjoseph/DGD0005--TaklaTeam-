@@ -1,8 +1,8 @@
 # Week 5 — Pong on a host (listen server)
 
-**Efe Can Eser** (Team Takla) — Unity 6000.3.2f1 · FishNet 4.7.4 · Tugboat UDP 7770 · tick rate 30 · Multiplayer Play Mode 2.0.2
+**Team Takla:** Yusuf Arda Göçer · Efe Can Eser · Bora Deniz Nural — Unity 6000.3.2f1 · FishNet 4.7.4 · Tugboat UDP 7770 · tick rate 30 · Multiplayer Play Mode 2.0.2
 
-Our Pong, unchanged as a game. What changed is who runs the server: one click on **Start Host** makes this process the server and a client at the same time. Our Pong already has Homework 2 in it (the paddle is server-authoritative, the owner only sends its input), so some of what I saw on the guest is different from the sheet. Where that happened I wrote down what I measured.
+Our Pong, unchanged as a game. What changed is who runs the server: one click on **Start Host** makes this process the server and a client at the same time. Our Pong already has Homework 2 in it (the paddle is server-authoritative, the owner only sends its input), so some of what we saw on the guest is different from the sheet. Where that happened we wrote down what we measured.
 
 | Script | What changed this week |
 |---|---|
@@ -11,7 +11,7 @@ Our Pong, unchanged as a game. What changed is who runs the server: one click on
 | [`PaddleController.cs`](../Pong/Assets/Scripts/Network/PaddleController.cs) | object number and `All.Count` in the `[Server]` / `[Client]` paddle lines, a HUD panel `Paddles in All: N`. Both `All.Add` were already guarded. `OnStopServer` calls `GameState.ServerPlayersChanged()` when a player leaves. |
 | [`GameState.cs`](../Pong/Assets/Scripts/Network/GameState.cs), [`NetworkBall.cs`](../Pong/Assets/Scripts/Network/NetworkBall.cs) | Step 6 fix: a player leaves while the server keeps running → the ball goes back to the centre and the serve goes to a side that still has a player. `Goal()` does the same check, so a host alone keeps the serve. |
 
-**How I tested:** on one PC. The editor was the host. Guests were development builds of the same project, started next to it and connecting to 127.0.0.1 (or to the PC's Wi-Fi address for the connection card). The key presses (W/S, Space, C, X, T) were driven through Unity's Input System by a small throw-away test script that also wrote the timings below into a log; that script is not part of the project. Multiplayer Play Mode: I removed the `Server` tag from Player 2 for this week, so an instance no longer starts its own server next to the host.
+**How we tested:** first on one PC (Efe's): the editor was the host. Guests were development builds of the same project, started next to it and connecting to 127.0.0.1 (or to the PC's Wi-Fi address for the connection card). The key presses (W/S, Space, C, X, T) were driven through Unity's Input System by a small throw-away test script that also wrote the timings below into a log; that script is not part of the project. Multiplayer Play Mode: we removed the `Server` tag from Player 2 for this week, so an instance no longer starts its own server next to the host.
 
 ---
 
@@ -44,7 +44,7 @@ Main editor only: **Start Server**, then **Start Client** on 127.0.0.1 in the sa
 [Client] I am client 0, playing LEFT. My paddle is #3. All.Count = 1
 ```
 
-The `[Host]` line is there because I ran Step 1 with Step 2's logger change already in: the logger does not care which buttons started the two halves. A LEFT paddle, W/S move it, the ball waits. HUD: `Server: 1 client(s)`, `Client: my id = 0`, **`RTT (ping): 33 ms`**, not 0.
+The `[Host]` line is there because we ran Step 1 with Step 2's logger change already in: the logger does not care which buttons started the two halves. A LEFT paddle, W/S move it, the ball waits. HUD: `Server: 1 client(s)`, `Client: my id = 0`, **`RTT (ping): 33 ms`**, not 0.
 
 Why 33: FishNet measures RTT in whole ticks, and in FishNet 4.7.4 Tugboat still sends the host's own client messages through its UDP socket to 127.0.0.1. Its own ping comes back one tick after it was sent, so the host always shows exactly one tick: 33 ms at tick rate 30, 100 ms at tick rate 10. Nothing travels over a cable. Our Week 3 card has the same 33 ms for "server + client in one process". A guest on the same PC showed 0–33 ms, mostly 7, so on one PC the host's number tells you nothing.
 
@@ -74,7 +74,7 @@ if (args.ConnectionState == LocalConnectionState.Started && _nm.ServerManager.St
     Debug.Log("[Host] This process is the server AND a client. RTT is 0 ms.");
 ```
 
-One click on Start Host: the same Console as Step 1 and a LEFT paddle. (I kept the sentence of the sheet in the log line; the HUD next to it says 33 ms, see Step 1.)
+One click on Start Host: the same Console as Step 1 and a LEFT paddle. (We kept the sentence of the sheet in the log line; the HUD next to it says 33 ms, see Step 1.)
 
 **Start Server only:**
 
@@ -97,9 +97,9 @@ The two lines about the same object, #3:
 [Client] I am client 0, playing LEFT. My paddle is #3. All.Count = 1
 ```
 
-Both `All.Add` in `PaddleController` already had `if (!All.Contains(this))` from Week 3. I added `All.Count` to both lines and a HUD panel `Paddles in All: N`: host with one paddle → **1**; host + guest → 2; host + guest + spectator → 3.
+Both `All.Add` in `PaddleController` already had `if (!All.Contains(this))` from Week 3. We added `All.Count` to both lines and a HUD panel `Paddles in All: N`: host with one paddle → **1**; host + guest → 2; host + guest + spectator → 3.
 
-To see the bug I removed the guard in `OnStartClient` for one run: the server line said `All.Count = 1`, the client line `All.Count = 2`, and the HUD said 2 with one paddle on the court. Nothing else on screen looked different, which is why this bug waits until you print the list. Guard put back.
+To see the bug we removed the guard in `OnStartClient` for one run: the server line said `All.Count = 1`, the client line `All.Count = 2`, and the HUD said 2 with one paddle on the court. Nothing else on screen looked different, which is why this bug waits until you print the list. Guard put back.
 
 **Which callback ran first?** `OnStartServer`, run by the **server half**: it spawned the paddle, chose LEFT and wrote `Side`. `OnStartClient` on the same object came one tick later in most runs (33–40 ms; 108 ms once, right after entering Play mode), run by the **client half** when the spawn message reached the host's own client.
 
@@ -122,18 +122,18 @@ Host + guest playing, then a second guest joined as a spectator (client 2, `SPEC
 | | Host (client 0, LEFT) | Guest (client 1, RIGHT) | Spectator (client 2) |
 |---|---|---|---|
 | RTT on the HUD | always 33 ms (one tick) | 0–33 ms, mean 11 | 0–33 ms, mean 15 |
-| key down → **my own paddle** starts moving on my screen | **36–67 ms**, mean 52 (53 presses) | **93–186 ms**, median 115 (22 of 23 presses; one took 650 ms) | — |
-| Space → ball in play on my screen | 47–71 ms, mean 63 (22 serves) | 43–132 ms (5 serves over three runs) | — |
+| key down → **own paddle** starts moving on own screen | **36–67 ms**, mean 52 (53 presses) | **93–186 ms**, median 115 (22 of 23 presses; one took 650 ms) | — |
+| Space → ball in play on own screen | 47–71 ms, mean 63 (22 serves) | 43–132 ms (5 serves over three runs) | — |
 | bounces where the ball missed the paddle as drawn on that screen | 0 of 24 | 0 of 24 | 0 of 22 |
 | frames in which the ball stood still while in play | 0.05 % | 0.5 % | 1.8 % |
 
-What I saw: on the guest the ball never went through a paddle on screen and then bounced. That was the Week 3 picture (our Week 3 README, Step 8, question 3): there the guest drew its own paddle *now* and the ball a few ticks in the past. Since Homework 2 the guest draws its own paddle from the server too, so ball and paddle come from the same server ticks and agree. The delay went into the paddle instead: on the guest its own paddle is late, about twice as late as the host's paddle on the host. The host's paddle on the server *is* the host's paddle: its input is read by its own server one tick later and the host draws the server's transform directly, with no interpolation buffer. The guest's input has to reach the host, the new position has to come back and is then drawn a couple of ticks behind. That is host advantage.
+What we saw: on the guest the ball never went through a paddle on screen and then bounced. That was the Week 3 picture (our Week 3 README, Step 8, question 3): there the guest drew its own paddle *now* and the ball a few ticks in the past. Since Homework 2 the guest draws its own paddle from the server too, so ball and paddle come from the same server ticks and agree. The delay went into the paddle instead: on the guest its own paddle is late, about twice as late as the host's paddle on the host. The host's paddle on the server *is* the host's paddle: its input is read by its own server one tick later and the host draws the server's transform directly, with no interpolation buffer. The guest's input has to reach the host, the new position has to come back and is then drawn a couple of ticks behind. That is host advantage.
 
 The serve did not show the difference on one PC: the host's ServerRpc also goes through Tugboat on 127.0.0.1 in FishNet 4.7.4 and is read one tick later (47–71 ms), and the guest's packets only cross the same loopback (43–132 ms). Over a real LAN the guest's serve gets its full RTT added; the host's does not.
 
 **Guest's RTT:** 0–33 ms on one PC, mostly 7 ms; 0–20 ms, mostly 7, when it typed the PC's Wi-Fi address instead of 127.0.0.1.
 
-**Tick rate 10** (both host and guest set to 10, about 45 seconds of play): the ball on the guest still glided most of the time (the NetworkTransform interpolates between the fewer snapshots), but everything came later. The guest's own paddle reacted after 141–233 ms (11 presses), the host's own after 102–200 ms, the guest's serve took 199 ms, and the host's HUD said RTT 100 ms (one tick) while the guest's showed 0 (rounded to whole 100 ms ticks). In the worst second the ball stood still in 38 % of the guest's frames (13 % at tick 30), and once in 16 bounces the guest saw the ball bounce 0.09 units past the end of the host's paddle — the only miss in all my runs. Back to **30**.
+**Tick rate 10** (both host and guest set to 10, about 45 seconds of play): the ball on the guest still glided most of the time (the NetworkTransform interpolates between the fewer snapshots), but everything came later. The guest's own paddle reacted after 141–233 ms (11 presses), the host's own after 102–200 ms, the guest's serve took 199 ms, and the host's HUD said RTT 100 ms (one tick) while the guest's showed 0 (rounded to whole 100 ms ticks). In the worst second the ball stood still in 38 % of the guest's frames (13 % at tick 30), and once in 16 bounces the guest saw the ball bounce 0.09 units past the end of the host's paddle — the only miss in all our runs. Back to **30**.
 
 ## Step 6 — the host leaves
 
@@ -169,15 +169,15 @@ private void HandOverServe()   // also called in Goal()
 
 ## Step 7 — connection card
 
-| Direction | Partner | Host's address | My ClientId | My RTT | Connected first try? |
+| Direction | Players | Host's address | ClientId | RTT | Connected first try? |
 |---|---|---|---|---|---|
 | Editor = host, development build = guest, one PC | — | 127.0.0.1 | guest 1 (host 0) | guest 0–33 ms, mostly 7 · host 33 ms (one tick) | yes |
 | Same PC, the guest typed the Wi-Fi IPv4 from `ipconfig` | — | 192.168.1.3 (UDP 7770) | 1 | 0–20 ms, mostly 7 | yes |
-| I host, Bora joins | Bora Deniz Nural | 100.89.114.56 (my Tailscale IP), UDP 7770 | me 0, Bora 1 (RIGHT) | me 33 ms (one tick) · Bora 50–60 ms | yes |
-| I host, Yusuf joins | Yusuf Arda Göçer | 100.89.114.56 (my Tailscale IP), UDP 7770 | me 0, Yusuf 1 (RIGHT) | me 33 ms (one tick) · guest HUD 67 ms | yes |
-| Partner hosts, I join | — | — | — | — | not done: Pong closes on Bora's and Yusuf's laptops when they start it as a server (same as Week 3), so only my laptop can host |
+| Efe hosts, Bora joins | Efe Can Eser, Bora Deniz Nural | 100.89.114.56 (Efe's Tailscale IP), UDP 7770 | Efe 0, Bora 1 (RIGHT) | Efe 33 ms (one tick) · Bora 50–60 ms | yes |
+| Efe hosts, Yusuf joins | Efe Can Eser, Yusuf Arda Göçer | 100.89.114.56 (Efe's Tailscale IP), UDP 7770 | Efe 0, Yusuf 1 (RIGHT) | Efe 33 ms (one tick) · guest HUD 67 ms | yes |
+| Bora or Yusuf hosts | — | — | — | — | not done: Pong closes on Bora's and Yusuf's laptops when they start it as a server (same as Week 3), so only Efe's laptop can host |
 
-We live in different cities, so like in Week 3 we used one Tailscale network instead of a LAN (every PC gets a 100.x address). I hosted with the Pong build, each partner typed `100.89.114.56` and clicked Start Client. The guest's paddle moved on both screens, serve and goals worked and the score was the same on both (0 : 0, then 1 : 1). The host's HUD showed `Server: 2 client(s)`, `Paddles in All: 2`, and `Rejected inputs (paddle 1)` went from 13 to 36 during the rallies: over the Internet the guest's honest inputs land in the same server tick more often than on one PC. When the guest left, the host showed `Nobody on RIGHT, LEFT serves`, `Paddles in All: 1` and kept serving and scoring alone (5 : 1); after Stop Host the HUD was back to Start Server / Start Host with `Paddles in All: 0`. So the Step 6 fix also works over the network.
+We live in different cities, so like in Week 3 we used one Tailscale network instead of a LAN (every PC gets a 100.x address). Efe hosted with the Pong build, Bora and Yusuf each typed `100.89.114.56` and clicked Start Client. The guest's paddle moved on both screens, serve and goals worked and the score was the same on both (0 : 0, then 1 : 1). The host's HUD showed `Server: 2 client(s)`, `Paddles in All: 2`, and `Rejected inputs (paddle 1)` went from 13 to 36 during the rallies: over the Internet the guest's honest inputs land in the same server tick more often than on one PC. When the guest left, the host showed `Nobody on RIGHT, LEFT serves`, `Paddles in All: 1` and kept serving and scoring alone (5 : 1); after Stop Host the HUD was back to Start Server / Start Host with `Paddles in All: 0`. So the Step 6 fix also works over the network.
 
 | Guest over Tailscale (client 1, RTT 67 ms) | Host, same moment (client 0, RTT 33 ms) |
 |---|---|
@@ -188,7 +188,7 @@ We live in different cities, so like in Week 3 we used one Tailscale network ins
 |---|---|
 | ![Host alone](screenshots/tailscale_host_guest_left.webp) | ![After Stop Host](screenshots/tailscale_host_after_stop.webp) |
 
-Before the partner test I looked at the firewall on my PC, because the fix list's second line is the usual reason a LAN guest cannot connect: Windows had an inbound rule for Unity.exe that allows it only on Domain networks and blocks it on Public, and my home Wi-Fi is set to Public. So a guest on another PC would not reach a host running in my editor until Unity is allowed on Private + Public. The Pong build already has Allow rules for Private + Public, so for the partner test the host runs the build (`Start Host` is in the build's HUD too).
+Before the partner test we looked at the firewall on Efe's PC, because the fix list's second line is the usual reason a LAN guest cannot connect: Windows had an inbound rule for Unity.exe that allows it only on Domain networks and blocks it on Public, and his home Wi-Fi is set to Public. So a guest on another PC would not reach a host running in my editor until Unity is allowed on Private + Public. The Pong build already has Allow rules for Private + Public, so for the partner test the host runs the build (`Start Host` is in the build's HUD too).
 
 ## Step 8 — the same scripts, three ways
 
