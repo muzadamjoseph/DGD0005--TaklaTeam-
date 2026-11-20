@@ -201,3 +201,39 @@ Two fix-list lines we tried on purpose:
 
 - A code from a host that had just clicked Stop Host: Relay still accepted it (`Joined room BFJ7CH`), but nobody answered. The client stayed at Starting for 60 seconds, then `Failed to connect to server.` (60 connect attempts, 1 s each). So "a code dies with its host" is true, but it can take a minute to show.
 - A made-up code (K7PQ2M, the one from the sheet): `[Relay] Join failed: Bad Request: invalid request schema or decoding failure` straight away.
+
+## Step 7 — our partners, from another network
+
+A join code only works inside one Unity cloud project, so the guest has to run our Pong. Bora and Yusuf live in other districts (that is why we used Tailscale in Weeks 3 and 5), so this is the normal case for us. They run a Windows build of this repo's project, the same thing they would get by cloning it and pressing Play, and it carries the same cloud project. Efe hosts with Host via Relay and sends the code on WhatsApp. Bora types it at home and joins, then Yusuf. Then we swap and Bora hosts. In Weeks 3 and 5 Pong closed on Bora's and Yusuf's laptops whenever they started a server, so the swap may fail again; if it does, that goes on the card.
+
+Connection card:
+
+| | |
+|---|---|
+| Partner's name | Bora Deniz Nural, Yusuf Arda Göçer |
+| Who hosted, who joined | Efe hosted (Host via Relay), Bora joined, then Yusuf. Swap: _to fill in_ |
+| The two networks | Efe: home Wi-Fi · Bora: _to fill in_ · Yusuf: _to fill in_ |
+| Guest RTT through the Relay | _to fill in_ (for comparison: 40–87 ms, median 67, with both windows on Efe's PC) |
+| Guest RTT on 127.0.0.1 (Step 6) | 0 ms in all 20 samples (UnityTransport, Start Client on 127.0.0.1) |
+| First try? If not, which fix line | _to fill in_ |
+
+Screenshot of the guest window with the RTT and the score: _to add after the test_ (`screenshots/step7_guest.png`).
+
+1. Nobody connects to anybody directly: the host and the guest both open a connection to the same Relay server (the one in the allocation), and the Relay passes every packet on to the other side.
+2. Both connections go out from the home network to the Relay, and a home router always lets outgoing traffic and its answers through; nothing has to come in uninvited, so there is no port to forward. It even got around Efe's firewall: Windows blocks incoming traffic to the Unity editor on Public networks (that is what stopped a LAN guest in Week 5), his home Wi-Fi is Public, and the editor still hosted through the Relay without any change.
+3. Every packet now makes two trips instead of one, guest → Relay server → host and back the same way, and the Relay server sits in a data centre somewhere on the internet, not in anybody's house. That is where the extra milliseconds come from. On one PC it already took the guest from 0 to 67 ms RTT and its own paddle from 48 to 181 ms; from another city the guest's own line to the Relay comes on top.
+
+## Two words from this week
+
+- **Listen server:** a server that is also a player's game, what Start Host makes. Cheap, nobody has to rent a machine, but the server's rules are on the host's computer, so the host can change them (Step 3).
+- **Relay:** a server in the middle that both players connect out to and that forwards their packets. It is how a guest reaches a host behind a home router without an IP or port forwarding (Steps 4–7). It costs latency: one extra trip each way.
+
+## The line we point at
+
+[`RelayLink.cs`, line 30](../Pong/Assets/Scripts/Network/RelayLink.cs#L30):
+
+```csharp
+transport.SetRelayServerData(allocation.ToRelayServerData("dtls"));
+```
+
+Everything in Part B hangs on this line and on where it is. It gives UnityTransport the Relay room before `StartConnection`. One line later, the code still appears on the HUD but the host is listening on port 7770 and nobody can reach it.
