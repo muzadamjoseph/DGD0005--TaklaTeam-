@@ -119,3 +119,13 @@ After the restart: no red lines. Start Host gave a LEFT paddle and the Console n
 - The guest's RTT on 127.0.0.1 was 0 ms in all 20 samples (Tugboat: 0–33, mostly 7). The host's HUD shows 0 or 33.
 
 Also: when a guest clicks Stop Client, FishyUnityTransport writes a red `Failed to connect to server.` although the guest was connected the whole time. It marks the connection as closed before it handles its own disconnect event, then reads that event as a failed connect. It does no harm, we just don't panic about it anymore.
+
+## Step 5 — RelayLink.cs
+
+[`Pong/Assets/Scripts/Network/RelayLink.cs`](../Pong/Assets/Scripts/Network/RelayLink.cs), typed from Notes 6.1. A static class with two public methods: `StartHostAsync(nm)` returns the join code, `StartGuestAsync(nm, code)` joins with one. It compiled on the first try and nothing called it until Step 6.
+
+We added one thing. Both methods sign in first, the host under the profile `host` and the guest under `guest` (`InitializationOptions.SetProfile`, from the fix list). We test with two windows on one PC, and without profiles they could end up as the same anonymous player.
+
+- `CreateAllocationAsync` returns an `Allocation`: a place reserved for us on one Relay server, with that server's address and port, our allocation ID, a key and the connection data. That is everything the transport needs to sit on the Relay server as the host.
+- `GetJoinCodeAsync` returns a string, the six-character join code for that allocation (ours were LKDBDP and BFJ7CH). The guest gives it to `JoinAllocationAsync` and gets the same Relay server back.
+- `SetRelayServerData` comes before `StartConnection` because the transport reads it in the moment it starts. Started first, UnityTransport opens a normal socket on port 7770 and never goes to the Relay, so the code would point at a room with nobody in it.
