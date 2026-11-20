@@ -206,7 +206,7 @@ Two fix-list lines we tried on purpose:
 
 ## Step 7 — from another network
 
-A join code only works inside one Unity cloud project, so the guest has to run our Pong. Bora and Yusuf did not open Unity: they ran a Windows build of this project (same cloud project, so Efe's codes work). Efe hosted from his PC with Host via Relay and sent the code on WhatsApp. Yusuf joined on his own laptop from another city, Bora on his work laptop. Each game went to 3 points. We did not swap roles this week.
+A join code only works inside one Unity cloud project, so the guest has to run our Pong. Bora and Yusuf did not open Unity: they ran a Windows build of this project (same cloud project, so Efe's codes work). Efe hosted from his PC with Host via Relay and sent the code on WhatsApp. Yusuf joined on his own laptop from another city, Bora on his work laptop. Each game went to 3 points. There was no swap: like in Weeks 3 and 5, Pong closes on Bora's and Yusuf's laptops as soon as they start a server, so only Efe's PC can host. Relay does not change that, because the host still runs the server itself.
 
 Connection card:
 
