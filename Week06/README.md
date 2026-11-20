@@ -2,7 +2,7 @@
 
 **Team Takla:** Yusuf Arda Göçer · Efe Can Eser · Bora Deniz Nural — Unity 6000.3.2f1 · FishNet 4.7.4 · tick rate 30
 
-Our Homework 2 Pong, on a host. Answers go under each step as we do them.
+Our Homework 2 Pong, on a host. Part A is about who can cheat, Part B adds Unity Relay and a join code.
 
 ## Before we start
 
@@ -10,7 +10,7 @@ Our Homework 2 Pong, on a host. Answers go under each step as we do them.
 - [x] Start Host and Stop Host from Week 5 work.
 - [x] Multiplayer Play Mode: one instance, no `Server` tag (removed in Week 5).
 
-How we tested: on one PC (Efe's), like in Week 5. The main editor was the host and clicked Start Host. The guest was a development build of the same project on 127.0.0.1. We pressed the keys with a small throw-away script that queues key presses into the Input System and writes both windows' Console and positions into a log. It is not in the repo. That way we could press "C, X, T, G" in one window and read exactly what the other one did.
+How we tested: on one PC (Efe's), like in Week 5. The main editor was the host and clicked Start Host. The guest was a development build of the same project on 127.0.0.1. We pressed the keys with a small throw-away script that queues key presses into the Input System and writes both windows' Console and positions into a log. It is not in the repo. That way we could press C, X, T, G in one window and read what the other one did, frame by frame.
 
 ## Step 1 — the guest cheats
 
@@ -30,7 +30,7 @@ Start Host in the editor, the guest joined on 127.0.0.1 and was RIGHT (client 1)
 | T | nothing | the paddle was at (0, 0) for one frame on the guest (about 2 ms, we logged 150 frames), then back at x = 7, z = 3.47. The host's copy never moved |
 | G | nothing | score stayed 0 : 0 on both. The guest's own Console had a warning: `Cannot complete operation as server when server is not active.` |
 
-Three small differences from the sheet, all explainable:
+Three things came out a little different from the sheet:
 
 - C gave 20 lines, not 19. The spam is 20 inputs in one frame. The first one is accepted (that is the one tick of movement), the other 19 are rejected, and the guest's normal input for that tick arrives in the same tick and is rejected too.
 - X gave one line. The X input (50, clamped to 1) and the normal per-tick input landed in the same tick, so one of them was too fast.
@@ -38,7 +38,9 @@ Three small differences from the sheet, all explainable:
 
 ![Guest after pressing G](screenshots/step1_guest_after_G.png)
 
-**G wrote a SyncVar on the guest. Why did the host never see it?** A SyncVar only goes one way, server to clients. On the guest there is no server running, so FishNet refused the write (that is the warning) and nothing was sent anywhere. Even if the value had changed locally, there is no path from a client's SyncVar up to the server; the only way up is a ServerRpc, and then the server decides.
+> G wrote a SyncVar on the guest. Why did the host never see it?
+
+A SyncVar only goes one way, server to clients. On the guest there is no server running, so FishNet refused the write (that is the warning) and nothing was sent anywhere. Even if the value had changed locally, there is no path from a client's SyncVar up to the server; the only way up is a ServerRpc, and then the server decides.
 
 ## Step 2 — one more check: the serve
 
@@ -108,7 +110,7 @@ Guest window after the host pressed G:
 
 - Package Manager ▸ Unity Registry ▸ Multiplayer Services ▸ Install. We got 2.5.0, and it pulled in Unity Transport 2.7.4 and a newer Burst (1.8.29).
 - Install package from git URL: `https://github.com/ooonush/FishyUnityTransport.git?path=Assets/FishNet/Plugins/FishyUnityTransport`. It shows up as FishyUnityTransport (`com.alven.fishnet.unitytransport` 2.0.0-pre.2).
-- Project Settings ▸ Services: the editor was signed in and the project was already linked to our cloud project, so there was nothing to create. Relay is on in the dashboard; the first Host via Relay got a code, which it would not with Relay off.
+- Project Settings ▸ Services: the editor was signed in and the project was already linked to our cloud project, so there was nothing to create. Relay was already on for it in the dashboard: the first Host via Relay got a code, which does not happen with Relay off.
 - `NetworkManager` ▸ Add Component ▸ UnityTransport, Connection Data ▸ Port 7770. TransportManager ▸ Transport = UnityTransport. Tugboat is still on the object, unused.
 
 One problem the fix list does not have. Our first Start Host after the install threw `InvalidOperationException: Burst failed to compile the function pointer Void Receive(...)` and the server never started. Multiplayer Services had updated Burst, and Burst only loads its new compiler after the editor restarts (the Console had a Burst `TypeLoadException` right after the install, which we ignored at first). We closed and reopened Unity and the error was gone.
@@ -118,17 +120,17 @@ After the restart: no red lines. Start Host gave a LEFT paddle and the Console n
 - UnityTransport numbers the connections from 1. The host is client 1 and the guest client 2 now (with Tugboat it was 0 and 1). Nothing in our code cares which number a player has.
 - The guest's RTT on 127.0.0.1 was 0 ms in all 20 samples (Tugboat: 0–33, mostly 7). The host's HUD shows 0 or 33.
 
-Also: when a guest clicks Stop Client, FishyUnityTransport writes a red `Failed to connect to server.` although the guest was connected the whole time. It marks the connection as closed before it handles its own disconnect event, then reads that event as a failed connect. It does no harm, we just don't panic about it anymore.
+Also: when a guest clicks Stop Client, FishyUnityTransport writes a red `Failed to connect to server.` although the guest was connected the whole time. It marks the connection as closed before it handles its own disconnect event, then reads that event as a failed connect. It does no harm.
 
 ## Step 5 — RelayLink.cs
 
-[`Pong/Assets/Scripts/Network/RelayLink.cs`](../Pong/Assets/Scripts/Network/RelayLink.cs), typed from Notes 6.1. A static class with two public methods: `StartHostAsync(nm)` returns the join code, `StartGuestAsync(nm, code)` joins with one. It compiled on the first try and nothing called it until Step 6.
+[`Pong/Assets/Scripts/Network/RelayLink.cs`](../Pong/Assets/Scripts/Network/RelayLink.cs) (Notes 6.1). A static class with two public methods: `StartHostAsync(nm)` returns the join code, `StartGuestAsync(nm, code)` joins with one. It compiled on the first try and nothing called it until Step 6.
 
 We added one thing. Both methods sign in first, the host under the profile `host` and the guest under `guest` (`InitializationOptions.SetProfile`, from the fix list). We test with two windows on one PC, and without profiles they could end up as the same anonymous player.
 
 - `CreateAllocationAsync` returns an `Allocation`: a place reserved for us on one Relay server, with that server's address and port, our allocation ID, a key and the connection data. That is everything the transport needs to sit on the Relay server as the host.
 - `GetJoinCodeAsync` returns a string, the six-character join code for that allocation (ours were LKDBDP and BFJ7CH). The guest gives it to `JoinAllocationAsync` and gets the same Relay server back.
-- `SetRelayServerData` comes before `StartConnection` because the transport reads it in the moment it starts. Started first, UnityTransport opens a normal socket on port 7770 and never goes to the Relay, so the code would point at a room with nobody in it.
+- `SetRelayServerData` comes before `StartConnection` because the transport reads it in the moment it starts. If it starts first, UnityTransport opens a normal socket on port 7770 and never goes to the Relay, so the code points at a room with nobody in it. (We got this from reading `UnityTransport.StartServer`, not by trying it.)
 
 ## Step 6 — two buttons and a code
 
@@ -220,13 +222,14 @@ Connection card:
 Screenshot of the guest window with the RTT and the score: _to add after the test_ (`screenshots/step7_guest.png`).
 
 1. Nobody connects to anybody directly: the host and the guest both open a connection to the same Relay server (the one in the allocation), and the Relay passes every packet on to the other side.
-2. Both connections go out from the home network to the Relay, and a home router always lets outgoing traffic and its answers through; nothing has to come in uninvited, so there is no port to forward. It even got around Efe's firewall: Windows blocks incoming traffic to the Unity editor on Public networks (that is what stopped a LAN guest in Week 5), his home Wi-Fi is Public, and the editor still hosted through the Relay without any change.
+2. Both connections go out from the home network to the Relay, and a home router lets outgoing traffic and its answers through; nothing has to come in uninvited, so there is no port to forward. It even got around Efe's firewall: Windows blocks incoming traffic to the Unity editor on Public networks (that is what stopped a LAN guest in Week 5), his home Wi-Fi is Public, and the editor still hosted through the Relay without any change.
 3. Every packet now makes two trips instead of one, guest → Relay server → host and back the same way, and the Relay server sits in a data centre somewhere on the internet, not in anybody's house. That is where the extra milliseconds come from. On one PC it already took the guest from 0 to 67 ms RTT and its own paddle from 48 to 181 ms; from another city the guest's own line to the Relay comes on top.
 
 ## Two words from this week
 
-- **Listen server:** a server that is also a player's game, what Start Host makes. Cheap, nobody has to rent a machine, but the server's rules are on the host's computer, so the host can change them (Step 3).
-- **Relay:** a server in the middle that both players connect out to and that forwards their packets. It is how a guest reaches a host behind a home router without an IP or port forwarding (Steps 4–7). It costs latency: one extra trip each way.
+Listen server: a server that is also a player's game, which is what Start Host makes. Nobody has to rent a machine for it, but the rules run on the host's computer and the host can change them (Step 3).
+
+Relay: a server in the middle that both players connect out to and that forwards their packets. With it a guest reaches a host behind a home router without an IP address or port forwarding (Steps 4–7). The price is latency, one extra trip each way.
 
 ## The line we point at
 
@@ -236,4 +239,4 @@ Screenshot of the guest window with the RTT and the score: _to add after the tes
 transport.SetRelayServerData(allocation.ToRelayServerData("dtls"));
 ```
 
-Everything in Part B hangs on this line and on where it is. It gives UnityTransport the Relay room before `StartConnection`. One line later, the code still appears on the HUD but the host is listening on port 7770 and nobody can reach it.
+Part B works because of this line and because of where it is: it hands UnityTransport the Relay room before `StartConnection`. Moved below `StartConnection`, the host would still get a code and show it, but its transport would already be running without the room (Step 5), and that is the fix list's "code appears, then the server is Stopped".
