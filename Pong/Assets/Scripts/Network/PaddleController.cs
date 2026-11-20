@@ -146,6 +146,8 @@ public class PaddleController : NetworkBehaviour
         if (kb.xKey.wasPressedThisFrame) ServerSetAxis(50f);    // X: speed hack, an impossible input
         if (kb.tKey.wasPressedThisFrame && NetworkBall.Instance != null)
             transform.position = NetworkBall.Instance.transform.position;   // T: teleport, on this client only, no RPC
+        if (kb.gKey.wasPressedThisFrame && GameState.Instance != null)
+            GameState.Instance.LeftScore.Value = 9;                         // G: score edit, a direct write, no RPC (Week 6)
     }
 
     // ---------- Homework 2: input up, position down ----------
