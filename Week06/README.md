@@ -206,13 +206,13 @@ Two fix-list lines we tried on purpose:
 
 ## Step 7 — from another network
 
-A join code only works inside one Unity cloud project, so the guest has to run our Pong. Bora and Yusuf live in other districts (that is why we used Tailscale in Weeks 3 and 5) and were not around this week, so the two-houses run did not happen. What the card shows was measured on Efe's PC through the real Unity Relay: both windows had to go out to Unity's Relay server and back, they just started and ended in the same house. For the run from two homes there is a Windows build of this project ready (same cloud project, so its codes work) with a short how-to: Efe hosts, sends the code on WhatsApp, Bora and Yusuf join from home.
+A join code only works inside one Unity cloud project, so the guest has to run our Pong. This week Yusuf is in another city and Bora is busy until the deadline, so the run with a partner in another house could not happen. What the card shows was measured on Efe's PC through the real Unity Relay: both windows had to go out to Unity's Relay server and back, they just started and ended in the same house. We also made a Windows build of this project (same cloud project, so its codes work) so a partner can join without opening Unity.
 
 Connection card:
 
 | | |
 |---|---|
-| Partner's name | Bora Deniz Nural, Yusuf Arda Göçer (run from two homes not done yet, see above) |
+| Partner's name | Bora Deniz Nural, Yusuf Arda Göçer (not available this week, see above) |
 | Who hosted, who joined | Efe's editor hosted with Host via Relay, a build of the same project on the same PC joined with the code |
 | The two networks | one: Efe's home Wi-Fi for both windows, every packet through Unity Relay |
 | Guest RTT through the Relay | 40–87 ms, median 67 (30 samples, HUD) |
