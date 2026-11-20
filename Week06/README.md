@@ -83,3 +83,23 @@ What we saw:
 | ![Guest TOO FAST](screenshots/step2_guest_too_fast.png) | ![Host, no flash](screenshots/step2_host_no_flash.png) |
 
 The first Space in the first bullet was refused silently (not the guest's serve) but it still set the timestamp. That is on purpose: the rate check comes before the rule check, so a spammer gets told "too fast" whether or not it is their serve.
+
+## Step 3 — the host cheats
+
+Same keys, this time in the host's window (the editor). Then, still in Play, we selected the host's paddle (`Paddle(Clone)`, owner 0) in the Hierarchy and changed Speed from 8 to 40 in the Inspector.
+
+| On the host | Result | Why |
+|---|---|---|
+| C | 20 `Rejected input from client 0` lines, the paddle moved one tick (0.27) | it is a request. The 30 ms check runs for the host's own inputs too |
+| X | 1 rejected line, moved 0.26, normal speed | it is a request. The clamp to ±1 runs |
+| T | the host's paddle jumped onto the ball in the middle of the court and stayed there. Same in the guest window | a direct write. On the host, `transform.position` is the server's position, so the next `ForceSend` sends it to everybody |
+| G | LEFT 9 : 0 in both windows. The guest had it 20 ms after the key. The feed still ended at "LEFT scored. 2 : 0", no goal for the other 7 points | a direct write. On the host that is the server writing the SyncVar |
+| Speed 40 | we held a key for 0.1 s: the host's paddle went 4.00 units (3 ticks, 1.33 per tick), the guest's paddle with Speed 8 went 1.06 (4 ticks, 0.27 per tick). Five times faster, in both windows | the host's numbers are the rules |
+
+Guest window after the host pressed G:
+
+![Guest after the host pressed G](screenshots/step3_guest_after_host_G.png)
+
+1. C and X go through `ServerSetAxis`, a request that the server checks, and the server checks the host's requests as well; T and G write the state directly, and on the host the state they write is the server's own.
+2. The guest saw every cheat that worked (the paddle sitting on the ball, 9 : 0 with no goal in the feed, a paddle crossing the court in a few ticks), but only as normal replicated positions and score, with nothing that marks them as cheats.
+3. Ranked with strangers: a dedicated server, because on a host one of the two players runs the rules and can change them, and the other one has no way to check.
