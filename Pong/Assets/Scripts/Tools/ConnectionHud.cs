@@ -5,6 +5,7 @@
 //   NetworkManager.ServerManager.StartConnection()              -> become a server
 //   NetworkManager.ClientManager.StartConnection(address, port) -> connect as a client
 //   both of them, in this one process, client on 127.0.0.1      -> a host (Week 5: Start Host)
+//   Host via Relay / Join via Relay with a six-letter code      -> the same, through Unity Relay (Week 6, RelayLink)
 //
 // This file knows nothing about paddles, balls or scores. Your own scripts talk to it through
 // two static hooks, so the HUD never dictates how you name or structure your gameplay code:
@@ -129,6 +130,28 @@ public class ConnectionHud : MonoBehaviour
     {
         _nm.ClientManager.StopConnection();
         _nm.ServerManager.StopConnection(true);
+        _relayCode = "";                          // the room dies with its host, so does the code
+    }
+
+    // ---------- Week 6, Step 6 (Notes 6.2): host and join through Unity Relay ----------
+    private string _joinCode = "";    // what the guest types
+    private string _relayCode = "";   // the code the host got; shown big while the server runs
+    private bool _relayBusy;          // a Relay call is running: no buttons, so two clicks cannot book two rooms
+
+    private async void HostViaRelay()
+    {
+        _relayBusy = true;
+        try { _relayCode = await RelayLink.StartHostAsync(_nm); }
+        catch (Exception e) { Debug.LogError($"[Relay] Host failed: {e.Message}"); }
+        finally { _relayBusy = false; }
+    }
+
+    private async void JoinViaRelay()
+    {
+        _relayBusy = true;
+        try { await RelayLink.StartGuestAsync(_nm, _joinCode); }
+        catch (Exception e) { Debug.LogError($"[Relay] Join failed: {e.Message}"); }
+        finally { _relayBusy = false; }
     }
 
     private void OnGUI()
@@ -142,7 +165,23 @@ public class ConnectionHud : MonoBehaviour
         // the box grows with its content: on a host the server lines and the client lines are all here at once
         GUILayout.BeginArea(new Rect(10, 10, 300, Screen.height - 20));
         GUILayout.BeginVertical(GUI.skin.box);
-        GUILayout.Label("<b>PONG — Week 5: Pong on a Host</b>", Rich());
+        GUILayout.Label("<b>PONG — Week 6: Relay</b>", Rich());
+
+        // --- the join code, big, while this process hosts a Relay room ---
+        if (_relayCode != "" && _serverState == LocalConnectionState.Started)
+            GUILayout.Label($"<b>JOIN CODE: {_relayCode}</b>", Big());
+
+        // --- Relay: host a room or join one with a code ---
+        if (bothStopped && !_relayBusy)
+        {
+            if (GUILayout.Button("Host via Relay")) HostViaRelay();
+            GUILayout.BeginHorizontal();
+            _joinCode = GUILayout.TextField(_joinCode, 6, GUILayout.Width(110));
+            if (GUILayout.Button("Join via Relay")) JoinViaRelay();
+            GUILayout.EndHorizontal();
+            GUILayout.Space(6);
+        }
+        if (_relayBusy) GUILayout.Label("Relay: asking Unity's servers…");
 
         // --- server, and the host buttons next to it ---
         GUILayout.BeginHorizontal();
@@ -154,7 +193,7 @@ public class ConnectionHud : MonoBehaviour
         {
             _nm.ServerManager.StopConnection(true);
         }
-        if (bothStopped && GUILayout.Button("Start Host")) StartHost();
+        if (bothStopped && !_relayBusy && GUILayout.Button("Start Host")) StartHost();
         if (bothStarted && GUILayout.Button("Stop Host")) StopHost();
         GUILayout.EndHorizontal();
 
@@ -178,7 +217,7 @@ public class ConnectionHud : MonoBehaviour
         string stats = _traffic == null ? "  (statistics disabled: StatisticsManager ▸ Network Traffic ▸ Enable Mode)" : "";
         if (_serverState == LocalConnectionState.Started)
         {
-            GUILayout.Label($"Server: {_nm.ServerManager.Clients.Count} client(s) on UDP {port}");
+            GUILayout.Label($"Server: {_nm.ServerManager.Clients.Count} client(s) {(_relayCode != "" ? "through the Relay" : $"on UDP {port}")}");
             GUILayout.Label($"Server traffic: in {_srvInBytes} B/s, out {_srvOutBytes} B/s{stats}");
         }
         if (_clientState == LocalConnectionState.Started)
@@ -212,6 +251,13 @@ public class ConnectionHud : MonoBehaviour
     private static GUIStyle Rich()
     {
         GUIStyle s = new GUIStyle(GUI.skin.label) { richText = true };
+        return s;
+    }
+
+    private static GUIStyle Big()
+    {
+        GUIStyle s = new GUIStyle(GUI.skin.label) { richText = true, fontSize = 26 };
+        s.normal.textColor = new Color(1f, 0.8f, 0.33f);
         return s;
     }
 }

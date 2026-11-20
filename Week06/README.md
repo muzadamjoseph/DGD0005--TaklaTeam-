@@ -129,3 +129,75 @@ We added one thing. Both methods sign in first, the host under the profile `host
 - `CreateAllocationAsync` returns an `Allocation`: a place reserved for us on one Relay server, with that server's address and port, our allocation ID, a key and the connection data. That is everything the transport needs to sit on the Relay server as the host.
 - `GetJoinCodeAsync` returns a string, the six-character join code for that allocation (ours were LKDBDP and BFJ7CH). The guest gives it to `JoinAllocationAsync` and gets the same Relay server back.
 - `SetRelayServerData` comes before `StartConnection` because the transport reads it in the moment it starts. Started first, UnityTransport opens a normal socket on port 7770 and never goes to the Relay, so the code would point at a room with nobody in it.
+
+## Step 6 — two buttons and a code
+
+In [`ConnectionHud.cs`](../Pong/Assets/Scripts/Tools/ConnectionHud.cs):
+
+```csharp
+private string _joinCode = "";    // what the guest types
+private string _relayCode = "";   // the code the host got; shown big while the server runs
+private bool _relayBusy;          // a Relay call is running: no buttons, so two clicks cannot book two rooms
+
+private async void HostViaRelay()
+{
+    _relayBusy = true;
+    try { _relayCode = await RelayLink.StartHostAsync(_nm); }
+    catch (Exception e) { Debug.LogError($"[Relay] Host failed: {e.Message}"); }
+    finally { _relayBusy = false; }
+}
+
+private async void JoinViaRelay()
+{
+    _relayBusy = true;
+    try { await RelayLink.StartGuestAsync(_nm, _joinCode); }
+    catch (Exception e) { Debug.LogError($"[Relay] Join failed: {e.Message}"); }
+    finally { _relayBusy = false; }
+}
+```
+
+In `OnGUI`, while server and client are both Stopped and `_relayBusy` is false: a Host via Relay button, then a text field for the code (6 characters max) next to a Join via Relay button. While a call runs the buttons are gone and the HUD says `Relay: asking Unity's servers…`; Start Host is hidden then too. While `_relayCode` is not empty and the server is Started, `JOIN CODE: BFJ7CH` sits at the top in 26 pt. Stop Host clears `_relayCode`.
+
+Host (main editor), Host via Relay:
+
+```
+[Relay] Signed in as host, player …          0.4 s after the click
+[Relay] Join code: BFJ7CH                    2.0 s after the click
+[Server] Starting
+[Server] Started
+[Client] Started
+[Host] This process is the server AND a client. RTT is 0 ms.
+[Server] Spawned paddle #3 for client 1: LEFT. All.Count = 1
+```
+
+Guest (build), code typed, Join via Relay:
+
+```
+[Relay] Signed in as guest, player …
+[Client] Starting
+[Relay] Joined room BFJ7CH, connecting through the Relay
+[Client] Started                             1.7 s after the click
+[Client] I am client 2, playing RIGHT. My paddle is #4. All.Count = 2
+```
+
+FishNet still prints `Server IP is 127.0.0.1, port is 7770` when the guest's client starts. That is only the unused Connection Data on the component; the client really goes to the Relay server.
+
+Then a rally. For 30 seconds both paddles followed the ball (our test script pressed W/S for each window) and LEFT served: 8 paddle hits, no miss, the same 8 hits in the same order in both windows. The guest saw each hit about 150 ms after the host did.
+
+| Host: the code, 2 clients through the Relay | Guest: RIGHT, RTT 73 ms, the ball in play |
+|---|---|
+| ![Host with join code](screenshots/step6_host_join_code.png) | ![Guest through the Relay](screenshots/step6_guest_relay.png) |
+
+Same PC, guest measured both ways:
+
+| | Guest RTT (HUD, 0.5 s samples) | key down → own paddle moves on the guest's screen |
+|---|---|---|
+| 127.0.0.1, Start Client (Step 4) | 0 ms in all 20 samples | 46–79 ms, median 48 (10 presses) |
+| Join via Relay | 40–87 ms, median 67 (30 samples) | 156–183 ms, median 181 (10 presses) |
+
+Nothing else changed between the two rows, so the difference is the trip from our PC to Unity's Relay server and back. During the rally the host's HUD also counted 67 rejected inputs from the guest. Those are honest inputs: the Relay sometimes delivers two of them in the same tick, and our 30 ms rule drops the second one. We saw the same over Tailscale in Week 5.
+
+Two fix-list lines we tried on purpose:
+
+- A code from a host that had just clicked Stop Host: Relay still accepted it (`Joined room BFJ7CH`), but nobody answered. The client stayed at Starting for 60 seconds, then `Failed to connect to server.` (60 connect attempts, 1 s each). So "a code dies with its host" is true, but it can take a minute to show.
+- A made-up code (K7PQ2M, the one from the sheet): `[Relay] Join failed: Bad Request: invalid request schema or decoding failure` straight away.
