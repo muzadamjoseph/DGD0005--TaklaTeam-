@@ -34,7 +34,7 @@ public class PaddleController : NetworkBehaviour
     private const double MinInputGap = 0.030;   // seconds
     private double _lastInputTime = -1;
     public int RejectedInputs;
-    private const double MinServeGap = 1.0;     // seconds, serve requests (extra)
+    private const double MinServeGap = 1.0;     // seconds, one serve request per second (Week 6, Step 2)
     private double _lastServeTime = -1;
 
     public static string SideName(int side) => side == Left ? "LEFT" : side == Right ? "RIGHT" : "SPECTATOR";
@@ -213,26 +213,29 @@ public class PaddleController : NetworkBehaviour
     // ---------- Step 8: three RPCs ----------
 
     /// Client -> server: "let me serve". The server decides whether that is allowed.
+    // Order: well-formed? -> too fast? -> allowed by the rule? -> write state -> announce (Week 4 notes, 4.2)
     [ServerRpc]
     private void ServerRequestServe()
     {
-        // too fast? (extra, not graded) one serve request per second per client
+        // well-formed? there has to be a match to serve in
+        GameState gs = GameState.Instance;
+        NetworkBall ball = NetworkBall.Instance;
+        if (gs == null || ball == null) return;
+
+        // too fast? one serve request per second, per paddle = per player (instance field, not static)
         double now = TimeManager.TicksToTime(TimeManager.Tick);
         if (_lastServeTime >= 0 && now - _lastServeTime < MinServeGap)
         {
-            TargetTooFast(Owner);
+            TargetRefused(Owner, "TOO FAST");
             return;
         }
         _lastServeTime = now;
 
-        // allowed by the game rule?
-        GameState gs = GameState.Instance;
-        NetworkBall ball = NetworkBall.Instance;
-        if (gs == null || ball == null) return;
+        // allowed by the rule? your serve, ball not in play
         if (Side.Value != gs.ServingSide.Value || ball.InPlay.Value) return;
 
-        ball.Serve(1 - Side.Value);
-        GameState.Announce($"{SideName(Side.Value)} serves");
+        ball.Serve(1 - Side.Value);                          // write state
+        GameState.Announce($"{SideName(Side.Value)} serves"); // announce
     }
 
     /// Server -> every client: who scored and the new score.
@@ -242,11 +245,11 @@ public class PaddleController : NetworkBehaviour
         ConnectionHud.Flash($"{SideName(Side.Value)} scored! {left} : {right}");
     }
 
-    /// Server -> one client: your serve request came less than a second after the last one.
+    /// Server -> one client: your request was refused, and why. Only that player's HUD flashes.
     [TargetRpc]
-    private void TargetTooFast(NetworkConnection target)
+    private void TargetRefused(NetworkConnection target, string why)
     {
-        ConnectionHud.Flash("TOO FAST");
+        ConnectionHud.Flash(why);
     }
 
     /// Server -> one client (the conceder): it is your serve now.
