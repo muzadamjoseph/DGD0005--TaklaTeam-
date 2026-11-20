@@ -206,26 +206,29 @@ Two fix-list lines we tried on purpose:
 
 ## Step 7 — from another network
 
-A join code only works inside one Unity cloud project, so the guest has to run our Pong. This week Yusuf is in another city and Bora is busy until the deadline, so the run with a partner in another house could not happen. What the card shows was measured on Efe's PC through the real Unity Relay: both windows had to go out to Unity's Relay server and back, they just started and ended in the same house. We also made a Windows build of this project (same cloud project, so its codes work) so a partner can join without opening Unity.
+A join code only works inside one Unity cloud project, so the guest has to run our Pong. Bora and Yusuf did not open Unity: they ran a Windows build of this project (same cloud project, so Efe's codes work). Efe hosted from his PC with Host via Relay and sent the code on WhatsApp. Yusuf joined on his own laptop from another city, Bora on his work laptop. Each game went to 3 points. We did not swap roles this week.
 
 Connection card:
 
-| | |
-|---|---|
-| Partner's name | Bora Deniz Nural, Yusuf Arda Göçer (not available this week, see above) |
-| Who hosted, who joined | Efe's editor hosted with Host via Relay, a build of the same project on the same PC joined with the code |
-| The two networks | one: Efe's home Wi-Fi for both windows, every packet through Unity Relay |
-| Guest RTT through the Relay | 40–87 ms, median 67 (30 samples, HUD) |
-| Guest RTT on 127.0.0.1 (Step 6) | 0 ms in all 20 samples (UnityTransport, Start Client on 127.0.0.1) |
-| First try? If not, which fix line | The Relay itself, yes: the first Host via Relay got a code and the first Join via Relay connected. Before that, Start Host did not work until we restarted Unity after the Burst update (Step 4, not on the fix list) |
+| | Yusuf | Bora |
+|---|---|---|
+| Partner's name | Yusuf Arda Göçer | Bora Deniz Nural |
+| Who hosted, who joined | Efe hosted (Host via Relay), Yusuf joined as RIGHT | Efe hosted (Host via Relay), Bora joined as RIGHT |
+| The two networks | Efe: home Wi-Fi (TurkNet) · Yusuf: home Wi-Fi (TurkNet VDSL, 5 GHz), another city | Efe: home Wi-Fi (TurkNet) · Bora: Wi-Fi (Superonline fibre) |
+| Guest RTT through the Relay | 52–67 ms, mostly 58 | 59–78 ms, mostly 64 |
+| Guest RTT on 127.0.0.1 (Step 6) | 0 ms (Efe's PC, 20 samples) | 0 ms (Efe's PC, 20 samples) |
+| First try? If not, which fix line | yes, connected 1–2 s after Join via Relay | yes, the RIGHT paddle was his right after the code |
+| Final score | LEFT 3 : 2 RIGHT | LEFT 3 : 1 RIGHT |
 
-Guest window through the Relay, with the RTT and the score:
+For comparison, with both windows on Efe's PC the guest's RTT through the Relay was 40–87 ms, median 67. From two houses it was about the same, because the long part of the trip is the way to Unity's Relay server and back, and that is there either way.
+
+Guest window through the Relay (Efe's PC):
 
 ![Guest through the Relay](screenshots/step6_guest_relay.png)
 
 1. Nobody connects to anybody directly: the host and the guest both open a connection to the same Relay server (the one in the allocation), and the Relay passes every packet on to the other side.
 2. Both connections go out from the home network to the Relay, and a home router lets outgoing traffic and its answers through; nothing has to come in uninvited, so there is no port to forward. It even got around Efe's firewall: Windows blocks incoming traffic to the Unity editor on Public networks (that is what stopped a LAN guest in Week 5), his home Wi-Fi is Public, and the editor still hosted through the Relay without any change.
-3. Every packet now makes two trips instead of one, guest → Relay server → host and back the same way, and the Relay server sits in a data centre somewhere on the internet, not in anybody's house. That is where the extra milliseconds come from. On one PC it already took the guest from 0 to 67 ms RTT and its own paddle from 48 to 181 ms; from another city the guest's own line to the Relay comes on top.
+3. Every packet now makes two trips instead of one, guest → Relay server → host and back the same way, and the Relay server sits in a data centre somewhere on the internet, not in anybody's house. That is where the extra milliseconds come from. On one PC it already took the guest from 0 to 67 ms RTT and its own paddle from 48 to 181 ms. From Yusuf's and Bora's houses it was 58 and 64 ms.
 
 ## Two words from this week
 
