@@ -204,22 +204,24 @@ Two fix-list lines we tried on purpose:
 - A code from a host that had just clicked Stop Host: Relay still accepted it (`Joined room BFJ7CH`), but nobody answered. The client stayed at Starting for 60 seconds, then `Failed to connect to server.` (60 connect attempts, 1 s each). So "a code dies with its host" is true, but it can take a minute to show.
 - A made-up code (K7PQ2M, the one from the sheet): `[Relay] Join failed: Bad Request: invalid request schema or decoding failure` straight away.
 
-## Step 7 — our partners, from another network
+## Step 7 — from another network
 
-A join code only works inside one Unity cloud project, so the guest has to run our Pong. Bora and Yusuf live in other districts (that is why we used Tailscale in Weeks 3 and 5), so this is the normal case for us. They run a Windows build of this repo's project, the same thing they would get by cloning it and pressing Play, and it carries the same cloud project. Efe hosts with Host via Relay and sends the code on WhatsApp. Bora types it at home and joins, then Yusuf. Then we swap and Bora hosts. In Weeks 3 and 5 Pong closed on Bora's and Yusuf's laptops whenever they started a server, so the swap may fail again; if it does, that goes on the card.
+A join code only works inside one Unity cloud project, so the guest has to run our Pong. Bora and Yusuf live in other districts (that is why we used Tailscale in Weeks 3 and 5) and were not around this week, so the two-houses run did not happen. What the card shows was measured on Efe's PC through the real Unity Relay: both windows had to go out to Unity's Relay server and back, they just started and ended in the same house. For the run from two homes there is a Windows build of this project ready (same cloud project, so its codes work) with a short how-to: Efe hosts, sends the code on WhatsApp, Bora and Yusuf join from home.
 
 Connection card:
 
 | | |
 |---|---|
-| Partner's name | Bora Deniz Nural, Yusuf Arda Göçer |
-| Who hosted, who joined | Efe hosted (Host via Relay), Bora joined, then Yusuf. Swap: _to fill in_ |
-| The two networks | Efe: home Wi-Fi · Bora: _to fill in_ · Yusuf: _to fill in_ |
-| Guest RTT through the Relay | _to fill in_ (for comparison: 40–87 ms, median 67, with both windows on Efe's PC) |
+| Partner's name | Bora Deniz Nural, Yusuf Arda Göçer (run from two homes not done yet, see above) |
+| Who hosted, who joined | Efe's editor hosted with Host via Relay, a build of the same project on the same PC joined with the code |
+| The two networks | one: Efe's home Wi-Fi for both windows, every packet through Unity Relay |
+| Guest RTT through the Relay | 40–87 ms, median 67 (30 samples, HUD) |
 | Guest RTT on 127.0.0.1 (Step 6) | 0 ms in all 20 samples (UnityTransport, Start Client on 127.0.0.1) |
-| First try? If not, which fix line | _to fill in_ |
+| First try? If not, which fix line | The Relay itself, yes: the first Host via Relay got a code and the first Join via Relay connected. Before that, Start Host did not work until we restarted Unity after the Burst update (Step 4, not on the fix list) |
 
-Screenshot of the guest window with the RTT and the score: _to add after the test_ (`screenshots/step7_guest.png`).
+Guest window through the Relay, with the RTT and the score:
+
+![Guest through the Relay](screenshots/step6_guest_relay.png)
 
 1. Nobody connects to anybody directly: the host and the guest both open a connection to the same Relay server (the one in the allocation), and the Relay passes every packet on to the other side.
 2. Both connections go out from the home network to the Relay, and a home router lets outgoing traffic and its answers through; nothing has to come in uninvited, so there is no port to forward. It even got around Efe's firewall: Windows blocks incoming traffic to the Unity editor on Public networks (that is what stopped a LAN guest in Week 5), his home Wi-Fi is Public, and the editor still hosted through the Relay without any change.
