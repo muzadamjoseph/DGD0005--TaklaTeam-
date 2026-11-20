@@ -103,3 +103,19 @@ Guest window after the host pressed G:
 1. C and X go through `ServerSetAxis`, a request that the server checks, and the server checks the host's requests as well; T and G write the state directly, and on the host the state they write is the server's own.
 2. The guest saw every cheat that worked (the paddle sitting on the ball, 9 : 0 with no goal in the feed, a paddle crossing the court in a few ticks), but only as normal replicated positions and score, with nothing that marks them as cheats.
 3. Ranked with strangers: a dedicated server, because on a host one of the two players runs the rules and can change them, and the other one has no way to check.
+
+## Step 4 — packages and the transport
+
+- Package Manager ▸ Unity Registry ▸ Multiplayer Services ▸ Install. We got 2.5.0, and it pulled in Unity Transport 2.7.4 and a newer Burst (1.8.29).
+- Install package from git URL: `https://github.com/ooonush/FishyUnityTransport.git?path=Assets/FishNet/Plugins/FishyUnityTransport`. It shows up as FishyUnityTransport (`com.alven.fishnet.unitytransport` 2.0.0-pre.2).
+- Project Settings ▸ Services: the editor was signed in and the project was already linked to our cloud project, so there was nothing to create. Relay is on in the dashboard; the first Host via Relay got a code, which it would not with Relay off.
+- `NetworkManager` ▸ Add Component ▸ UnityTransport, Connection Data ▸ Port 7770. TransportManager ▸ Transport = UnityTransport. Tugboat is still on the object, unused.
+
+One problem the fix list does not have. Our first Start Host after the install threw `InvalidOperationException: Burst failed to compile the function pointer Void Receive(...)` and the server never started. Multiplayer Services had updated Burst, and Burst only loads its new compiler after the editor restarts (the Console had a Burst `TypeLoadException` right after the install, which we ignored at first). We closed and reopened Unity and the error was gone.
+
+After the restart: no red lines. Start Host gave a LEFT paddle and the Console now says `Local server is starting for UnityTransport. Listening on port 7770.` The guest (a new build) joined on 127.0.0.1 and got RIGHT. Two things look different from Tugboat:
+
+- UnityTransport numbers the connections from 1. The host is client 1 and the guest client 2 now (with Tugboat it was 0 and 1). Nothing in our code cares which number a player has.
+- The guest's RTT on 127.0.0.1 was 0 ms in all 20 samples (Tugboat: 0–33, mostly 7). The host's HUD shows 0 or 33.
+
+Also: when a guest clicks Stop Client, FishyUnityTransport writes a red `Failed to connect to server.` although the guest was connected the whole time. It marks the connection as closed before it handles its own disconnect event, then reads that event as a failed connect. It does no harm, we just don't panic about it anymore.
